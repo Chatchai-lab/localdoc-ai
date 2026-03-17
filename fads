@@ -1,0 +1,20 @@
+[0;1;32m●[0m ollama.service - Ollama Service
+     Loaded: loaded (]8;;file://chatchai/etc/systemd/system/ollama.service/etc/systemd/system/ollama.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Fri 2026-03-06 02:19:29 CET; 27min ago
+   Main PID: 130332 (ollama)
+      Tasks: 16 (limit: 28370)
+     Memory: 4.7G (peak: 4.7G)
+        CPU: 3min 44.393s
+     CGroup: /system.slice/ollama.service
+             └─[0;38;5;245m130332 /usr/local/bin/ollama serve[0m
+
+Mär 06 02:19:46 chatchai ollama[130332]: [GIN] 2026/03/06 - 02:19:46 | 200 |      85.004µs |       127.0.0.1 | GET      "/api/version"
+Mär 06 02:28:09 chatchai ollama[130332]: [GIN] 2026/03/06 - 02:28:09 | 200 |      37.464µs |       127.0.0.1 | HEAD     "/"
+Mär 06 02:28:10 chatchai ollama[130332]: time=2026-03-06T02:28:10.427+01:00 level=INFO source=download.go:179 msg="downloading 667b0c1932bc in 16 307 MB part(s)"
+Mär 06 02:41:08 chatchai ollama[130332]: time=2026-03-06T02:41:08.062+01:00 level=INFO source=download.go:179 msg="downloading 948af2743fc7 in 1 1.5 KB part(s)"
+Mär 06 02:41:09 chatchai ollama[130332]: time=2026-03-06T02:41:09.420+01:00 level=INFO source=download.go:179 msg="downloading 0ba8f0e314b4 in 1 12 KB part(s)"
+Mär 06 02:41:10 chatchai ollama[130332]: time=2026-03-06T02:41:10.935+01:00 level=INFO source=download.go:179 msg="downloading 56bb8bd477a5 in 1 96 B part(s)"
+Mär 06 02:41:12 chatchai ollama[130332]: time=2026-03-06T02:41:12.472+01:00 level=INFO source=download.go:179 msg="downloading 455f34728c9b in 1 487 B part(s)"
+Mär 06 02:41:29 chatchai ollama[130332]: [GIN] 2026/03/06 - 02:41:29 | 200 |        13m19s |       127.0.0.1 | POST     "/api/pull"
+Mär 06 02:46:39 chatchai ollama[130332]: [GIN] 2026/03/06 - 02:46:39 | 200 |      31.781µs |       127.0.0.1 | HEAD     "/"
+Mär 06 02:46:39 chatchai ollama[130332]: [GIN] 2026/03/06 - 02:46:39 | 200 |     765.607µs |       127.0.0.1 | GET      "/api/tags"
