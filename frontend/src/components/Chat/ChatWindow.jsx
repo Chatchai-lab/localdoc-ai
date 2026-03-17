@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../../api/client';
+import { useChat } from '../../hooks/useChat';
 import MessageBubble from './MessageBubble';
+import Button from '../UI/Button';
 
 const ChatWindow = ({ onMessageSent }) => {
-  const [messages, setMessages] = useState([]);
+  const { messages, loading, sendMessage } = useChat();
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const messageEndRef = useRef(null);
 
   // Automatischer Scroll nach unten
@@ -16,31 +16,11 @@ const ChatWindow = ({ onMessageSent }) => {
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
-    const userMsg = { role: 'user', text: input };
-    setMessages(prev => [...prev, userMsg]);
     const currentInput = input;
     setInput("");
-    setLoading(true);
-
-    // Platzhalter für KI-Antwort (Wichtig: role 'bot' passend zur MessageBubble Logik)
-    const botMsgId = Date.now();
-    setMessages(prev => [...prev, { role: 'bot', text: "", id: botMsgId }]);
-
-    let fullAiText = "";
-    try {
-      await api.askStream(currentInput, (chunk) => {
-        fullAiText += chunk;
-        setMessages(prev => prev.map(msg => 
-          msg.id === botMsgId ? { ...msg, text: fullAiText } : msg
-        ));
-      });
-    } catch (err) {
-      console.error("Streaming Fehler", err);
-    } finally {
-      setLoading(false);
-      // Callback aufrufen, um z.B. Stats in der Sidebar zu aktualisieren
-      if (onMessageSent) onMessageSent();
-    }
+    
+    // Sende die Nachricht über den Hook und rufe onMessageSent auf wenn fertig
+    await sendMessage(currentInput, onMessageSent);
   };
 
   return (
@@ -81,13 +61,13 @@ const ChatWindow = ({ onMessageSent }) => {
             placeholder="Frage stellen..."
             className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-5 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-slate-100"
           />
-          <button
+          <Button
             onClick={handleSend}
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-all shadow-lg"
+            variant="primary"
           >
             {loading ? '...' : 'Senden'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

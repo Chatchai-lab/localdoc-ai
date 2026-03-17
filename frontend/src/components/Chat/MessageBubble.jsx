@@ -1,26 +1,14 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import SourceBadge
- from './SourceBadge';
+import SourceBadge from './SourceBadge';
 
- const MessageBubble = ({ message }) => {
+const MessageBubble = ({ message }) => {
   const isUser = message.role === 'user';
   const isBot = message.role === 'bot';
 
-  // NEU: Logik zum Trennen von Text und Quellen-JSON
-  let displayContent = String(message.text || message.content || ""); // Sicherstellen, dass es ein String ist
-  let extractedSources = message.sources || [];
-
-  // Wenn es vom Bot kommt und den Trenner enthält
-if (isBot && typeof displayContent === 'string' && displayContent.includes(' [SOURCES] ')) {
-    const parts = displayContent.split(' [SOURCES] ');
-    displayContent = parts[0];
-    try {
-      extractedSources = JSON.parse(parts[1]);
-    } catch (e) {
-      console.error("Quellen-Parsing fehlgeschlagen", e);
-    }
-  }
+  // Wir nehmen die Daten direkt so, wie der Hook sie vorbereitet hat
+  const displayContent = String(message.text || "");
+  const extractedSources = message.sources || [];
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -29,15 +17,18 @@ if (isBot && typeof displayContent === 'string' && displayContent.includes(' [SO
         ? 'bg-blue-600 text-white rounded-tr-none' 
         : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none'
       }`}>
-        <div className="prose prose-invert prose-sm max-w-none">
+        {/* Markdown Anzeige für den Text */}
+        <div className="prose prose-invert prose-sm max-w-none overflow-x-auto">
           <ReactMarkdown>
-            {displayContent} 
+            {displayContent}
           </ReactMarkdown>
         </div>
 
-        {/* NEU: Wir übergeben das extrahierte Array */}
-        {!isUser && extractedSources.length > 0 && (
-          <SourceBadge sources={extractedSources} />
+        {/* Quellen Anzeige: Nur wenn es ein Bot ist und Quellen da sind */}
+        {isBot && Array.isArray(extractedSources) && extractedSources.length > 0 && (
+          <div className="mt-3">
+            <SourceBadge sources={extractedSources} />
+          </div>
         )}
       </div>
     </div>

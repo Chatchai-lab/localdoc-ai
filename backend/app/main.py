@@ -193,19 +193,19 @@ async def ask_stream(request: QueryRequest):
     
     # 2. Formatiere die Ergebnisse & extrahiere Quellen
     formatted_context = []
-    source_names = []
+    sources_for_frontend = []
+    
     for res in search_results:
         formatted_context.append({
             "text": res["content"],
             "source": res["source"],
             "page": res["page"]
         })
-        # Dateinamen sammeln (Set benutzen für Einzigartigkeit)
-        if res.get("source"):
-            source_names.append(res["source"])
 
-    # Einzigartige Quellen sortieren
-    unique_sources = sorted(list(set(source_names)))
+        sources_for_frontend.append({
+            "source": res["source"],
+            "page": res["page"]
+        })
 
     # 3. Erstelle prompt
     prompt = build_prompt(query, formatted_context)
@@ -216,9 +216,7 @@ async def ask_stream(request: QueryRequest):
         async for chunk in ollama_generate_stream(prompt):
             yield chunk
         
-        # Am Ende das Trennwort und die Quellen als JSON schicken
-        # Wir fügen ein Leerzeichen davor ein, damit es nicht direkt am letzten Wort klebt
-        yield f" [SOURCES] {json.dumps(unique_sources)}"
+        yield f" [SOURCES] {json.dumps(sources_for_frontend)}"
 
     return StreamingResponse(
         combined_generator(), 

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { api } from '../../api/client';
+import Button from '../UI/Button';
 
 const UploadButton = ({ onUploadSuccess }) => {
   const fileInputRef = useRef(null);
@@ -31,14 +32,11 @@ const UploadButton = ({ onUploadSuccess }) => {
         accept=".pdf"
         className="hidden"
       />
-      <button
+      <Button
         onClick={() => fileInputRef.current.click()}
         disabled={uploading}
-        className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all shadow-lg ${
-          uploading 
-          ? 'bg-slate-700 cursor-not-allowed' 
-          : 'bg-blue-600 hover:bg-blue-500 active:scale-95'
-        }`}
+        variant="primary"
+        className="w-full"
       >
         {uploading ? (
           <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4" />
@@ -48,7 +46,7 @@ const UploadButton = ({ onUploadSuccess }) => {
           </svg>
         )}
         {uploading ? "Verarbeite..." : "PDF Hochladen"}
-      </button>
+      </Button>
     </div>
   );
 };

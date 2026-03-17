@@ -7,13 +7,26 @@ OLLAMA_URL = "http://localhost:11434"
 MODEL = "llama3.1"
 
 def build_prompt(question: str, contexts: List[Dict[str, Any]]) -> str:
-    ctx_blocks = [f"[{i+1}] Quelle: {c['source']} (S.{c['page']})\n{c['text']}" for i, c in enumerate(contexts)]
+    # Wir bringen die Struktur mit "Quelle [i]" zurück, lassen aber die 
+    # echten Dateinamen weg, damit die KI sie nicht in den Text schreibt.
+    ctx_blocks = [f"[Quelle {i+1}]:\n{c['text']}" for i, c in enumerate(contexts)]
     ctx_text = "\n\n".join(ctx_blocks)
-    return f"""Beantworte die Frage NUR mit dem Kontext. Falls unbekannt, sag: "Dazu finde ich nichts."
+    
+    return f"""Beantworte die Frage basierend auf dem folgenden Kontext. 
+Falls die Antwort nicht im Kontext steht, sag: "Dazu finde ich leider nichts in den Dokumenten."
+
+WICHTIG:
+- Antworte auf Deutsch.
+- Max. 10 Sätze.
+- Schreibe NUR die Antwort als Fließtext.
+- Füge KEIN Quellenverzeichnis am Ende hinzu.
+- Nenne KEINE Dateinamen oder Seitenzahlen im Text.
+
 Frage: {question}
+
 Kontext:
 {ctx_text}
-Antworte auf Deutsch. Max 10 Sätze. Quellen am Ende: "- Datei S.Seite" """
+"""
 
 async def ollama_generate_stream(prompt: str) -> AsyncGenerator[str, None]:
     """Gibt die Antwort asynchron Wort für Wort zurück."""
