@@ -4,7 +4,7 @@ import sys
 import logging
 from pathlib import Path
 
-# Optional: Docling imports (nur wenn installiert)
+# Optionales Docling-Modul importieren
 try:
     from docling.document_converter import DocumentConverter
     from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -14,46 +14,42 @@ try:
     DOCLING_AVAILABLE = True
 except ImportError:
     DOCLING_AVAILABLE = False
-    logging.warning("Docling nicht installiert - verwende Standard-Pipeline")
+    logging.warning("Docling-Modul fehlt - Nutzung der Standard-Verarbeitungspipeline")
 
-# Definiere Datenverzeichnisse
-# Im Docker läuft die App unter /app, lokal unter dem Projekt-Root
+# Dynamische Ermittlung des Basis-Pfades anhand der Umgebung (Docker vs. Lokal)
 BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 PROCESSED_DIR = DATA_DIR / "processed"
-
-#Debug Prints
-print(f"DEBUG: BASE_DIR ist {BASE_DIR.resolve()}")
-print(f"DEBUG: PROCESSED_DIR ist {PROCESSED_DIR.resolve()}")
 
 class IngestFactory:
     _converter_cache = None
 
     @classmethod
     def get_converter(cls):
-        """Lädt den Konverter nur einmalig in den RAM (Singleton Pattern)
-        OCR ist deaktiviert für digitale PDFs (massive Speedup!)
+        """
+        Singleton-Initialisierung des Docling-Konverters für Performance und RAM-Optimierung.
+        Deaktiviert die optische Zeichenerkennung (OCR) zur Steigerung der Durchlaufstärke bei nativen PDFs.
         """
         if not DOCLING_AVAILABLE:
             return None
             
         if cls._converter_cache is None:
-            print(" Initialisiere Docling DocumentConverter (OCR deaktiviert)...")
-            # Unterdrücke RapidOCR Warnungen
+            logging.info("Initialisiere Docling DocumentConverter (OCR optimiert)")
+            
+            # Fehlerprotokollierung für die RapidOCR Komponente drosseln
             logging.getLogger("rapidocr").setLevel(logging.ERROR)
             
-            # Konfiguriere PDF-Optionen: OCR aus, Tabellenstruktur an
-            pdf_options = PdfPipelineOptions(
-                do_ocr=False,  # Deaktiviere OCR für digitale PDFs
-                do_table_structure=True  # Erkenne Tabellen weiterhin
-            )
+            # Deaktiviere OCR für Speedup
+            pdf_options = PdfPipelineOptions()
+            pdf_options.do_ocr = False
+            pdf_options.do_table_structure = True
             
-            # Erstelle Format-Optionen für PDF
+            # Format-Spezifikationen für das PDF-Dateiformat
             format_options = {
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_options)
             }
             
-            # Initialisiiere DocumentConverter mit optimierten Optionen
+            # Persistenter Converter in der Applikationslebensdauer
             cls._converter_cache = DocumentConverter(
                 format_options=format_options
             )
@@ -61,47 +57,43 @@ class IngestFactory:
 
     @classmethod
     def decide_and_process(cls, pdf_path_str: str):
+        """Analysiert das Dokument und wählt je nach Inhalt (z.B. Tabellen) die passende Verarbeitungs-Pipeline aus."""
         pdf_path = Path(pdf_path_str)
         if not pdf_path.exists():
-            print(f" Datei nicht gefunden: {pdf_path_str}")
+            logging.error(f"Quelldokument inexistent unter Pfad: {pdf_path_str}")
             return
 
-        print(f" Verarbeite '{pdf_path.name}'...")
+        logging.info(f"Beginne Vorverarbeitung für Dokument: '{pdf_path.name}'")
         
-        # Falls Docling nicht verfügbar → direkt Standard-Pipeline nutzen
+        # Fallback, falls Docling nicht verfügbar ist
         if not DOCLING_AVAILABLE:
-            print(" docling nicht verfügbar - nutze Standard-Pipeline...")
+            logging.info("Docling ist nicht installiert - Fallback auf Standard-Pipeline")
             cls._run_standard_pipeline(pdf_path)
             return
         
-        # 1. Schneller Check mit Docling auf Tabellen (verwendet gecachten Konverter)
+        # Dokument analysieren und nach Tabellen-Elementen suchen
         converter = cls.get_converter()
         
         try:
             render_result = converter.convert(str(pdf_path))
-            # Wir zählen die erkannten Tabellen-Elemente
+            # Anzahl der identifizierten Tabellen zählen
             table_count = sum(1 for item, _ in render_result.document.iterate_items() if hasattr(item, 'label') and item.label == "table")
             
             if table_count > 0:
-                print(f"💡 {table_count} Tabelle(n) gefunden. Nutze Docling-Spezialpfad.")
-                # Pfad B: Direktes Ingest + Embedding in vector_db_docling
+                logging.info(f"{table_count} Tabelle(n) im Dokument gefunden -> Verarbeite Dokument mit Docling-Pipeline")
                 run_docling_ingest(pdf_path)
             else:
-                print(" Reiner Text erkannt. Fallback zur Standard-Pipeline...")
+                logging.info("Keine komplexen Strukturen (Tabellen) gefunden -> Verarbeite Dokument mit Standard-Pipeline")
                 cls._run_standard_pipeline(pdf_path)
 
         except Exception as e:
-            print(f" Fehler bei der Analyse: {e}. Fallback zur Standard-Pipeline...")
+            logging.error(f"Fehler bei der Dokumentenanalyse: {e} -> Führe Fallback auf Standard-Pipeline aus")
             cls._run_standard_pipeline(pdf_path)
 
     @classmethod
     def _run_standard_pipeline(cls, pdf_path: Path):
-        """Standard-Verarbeitungspipeline OHNE Docling
-        Nutzt die normalen ingest.py und embed.py Skripte.
-        """
-        # Determine correct working directory
-        # Docker: /app (BASE_DIR)
-        # Local: ./backend (BASE_DIR / "backend")
+        """Führt die reguläre PDF-Verarbeitung über ingest.py und embed.py aus (ohne Docling)."""
+        # Korrektes Arbeitsverzeichnis ermitteln (Docker: /app, Lokal: ./backend)
         cwd_path = BASE_DIR / "backend"
         if not cwd_path.exists():
             cwd_path = BASE_DIR

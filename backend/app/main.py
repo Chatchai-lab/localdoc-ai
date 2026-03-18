@@ -11,8 +11,7 @@ from app.rag.generate import build_prompt, ollama_generate_stream
 from fastapi.middleware.cors import CORSMiddleware
 import json
 
-# Definiere Datenverzeichnisse
-# Im Docker läuft die App unter /app, lokal unter dem Projekt-Root
+# Basis-Verzeichnis dynamisch ermitteln (Docker vs. Lokal)
 BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 DOCUMENTS_DIR = DATA_DIR / "documents"
@@ -75,9 +74,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Erlaubt alle Webseiten (wichtig für die Entwicklung)
+    allow_origins=["*"],  # Für Entwicklungszwecke temporär uneingeschränkt
     allow_credentials=True,
-    allow_methods=["*"],  # Erlaubt POST, GET, etc.
+    allow_methods=["*"],  # Alle HTTP-Methoden erlauben
     allow_headers=["*"],
 )
 
@@ -90,13 +89,13 @@ def health():
 @app.post("/query", response_model=QueryResponse)
 async def query_endpoint(request: QueryRequest):
     """
-    Sucht in einer Frage basiert auf indexierten Dokumenten.
+    Führt eine semantische Suche in den indizierten Dokumenten durch.
     
     Args:
-        request: QueryRequest mit Frage und Parametern
+        request: QueryRequest mit Frage und Auswertungs-Parametern
         
     Returns:
-        QueryResponse mit Suchergebnissen und Latenzen
+        QueryResponse mit Suchergebnissen und Latenz-Info
     """
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Frage darf nicht leer sein")
@@ -129,15 +128,15 @@ async def upload_document(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Nur PDF-Dateien erlaubt")
     
-    # Pfad definieren: data/documents/dateiname.pdf
+    # Speicherpfad für das hochgeladene PDF festlegen
     upload_path = DOCUMENTS_DIR / file.filename
     
     try:
-        # 1. Datei physisch auf die Festplatte schreiben
+        # 1. Datei im Dateisystem speichern
         with upload_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        # 2. Erst JETZT die Ingestion (Vektorisierung) starten
+        # 2. Dokumentenverarbeitung und Vektorisierung starten
         IngestFactory.decide_and_process(str(upload_path))
 
         return DocumentUploadResponse(
@@ -147,7 +146,7 @@ async def upload_document(file: UploadFile = File(...)):
         )
     
     except Exception as e:
-        # Falls was schief geht, Reste aufräumen
+        # Bei Fehlern die unvollständige Datei wieder löschen
         if upload_path.exists():
             upload_path.unlink()
         raise HTTPException(status_code=500, detail=f"Upload-Fehler: {str(e)}")
@@ -167,7 +166,7 @@ def list_documents():
         document_list.append({
             "name": d.name,
             "size_kb": round(stats.st_size / 1024, 2),
-            "modified": stats.st_mtime  # Nützlich für "Sortieren nach Datum"
+            "modified": stats.st_mtime  # Zeitstempel der letzten Änderung (für Sortierung im Frontend)
         })
         
     return {
@@ -177,13 +176,13 @@ def list_documents():
 
 @app.get("/stats")
 def get_stats():
-    """Gibt Statistiken über die Dokumentatur zurück."""
+    """Liefert Systemstatistiken zur Dokumentendatenbank zurück."""
     return RAGService.get_document_stats()
 
 @app.post("/ask/stream")
 async def ask_stream(request: QueryRequest):
     query = request.question
-    # 1. Nutze den funktionierenden RAG-Service
+    # 1. Semantische Suche über RAG-Service durchführen
     search_results = RAGService.search_and_rerank(query, k=request.k)
 
     if not search_results:
@@ -191,7 +190,7 @@ async def ask_stream(request: QueryRequest):
             yield "Dazu finde ich leider nichts in den Dokumenten."
         return StreamingResponse(error_gen(), media_type="text/plain")
     
-    # 2. Formatiere die Ergebnisse & extrahiere Quellen
+    # 2. Suchergebnisse formatieren und Quellen extrahieren
     formatted_context = []
     sources_for_frontend = []
     
@@ -207,12 +206,12 @@ async def ask_stream(request: QueryRequest):
             "page": res["page"]
         })
 
-    # 3. Erstelle prompt
+    # 3. Prompt für das Sprachmodell generieren
     prompt = build_prompt(query, formatted_context)
 
-    # 4. Generator-Funktion, die erst Text und dann Metadaten schickt
+    # 4. Generator streamt erst den KI-Text und am Ende die Metadaten
     async def combined_generator():
-        # Erst den KI-Text streamen
+        # Text-Chunks des Sprachmodells streamen
         async for chunk in ollama_generate_stream(prompt):
             yield chunk
         
@@ -226,7 +225,7 @@ async def ask_stream(request: QueryRequest):
 
 @app.delete("/documents/{filename}")
 async def delete_document_endpoint(filename: str):
-    """API-Endpunkt zum löschen eines Dokuments"""
+    """Löscht ein Dokument aus dem Dateisystem und den Vektordatenbanken."""
     try: 
         result = RAGService.delete_document(filename)
         

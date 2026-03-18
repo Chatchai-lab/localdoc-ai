@@ -8,8 +8,7 @@ from app.rag.vector_store import get_vector_db
 import time
 
 CURRENT_FILE = Path(__file__).resolve()
-# Docker: /app
-# Local: localdoc-ai/
+# Basis-Verzeichnis dynamisch ermitteln (Docker vs. Lokal)
 BASE_DIR = Path("/app") if Path("/app").exists() else CURRENT_FILE.parent.parent.parent.parent
 
 DATA_DIR = BASE_DIR / "data"
@@ -20,6 +19,8 @@ VECTOR_DB_DOCLING_DIR = DATA_DIR / "vector_db_docling"
 class RAGService:
     """Service für semantische Dokumentensuche mit Reranking."""
     
+    import logging
+
     @staticmethod
     def search_and_rerank(query: str, k: int = 3, rerank_k: int = 10) -> List[Dict[str, Any]]:
     
@@ -30,24 +31,22 @@ class RAGService:
             query_embedding = bi_encoder.encode(f"query: {query}").tolist()
             all_results = []
 
-            #Phase 1: Sicherer Retrieval aus beiden Datenbanken
+            # Phase 1: Semantische Suche in allen Vektordatenbanken
             for db_path, source_db in [(VECTOR_DB_DIR, "standard"), (VECTOR_DB_DOCLING_DIR, "docling")]:
                 if db_path.exists() and any(db_path.iterdir()):
                     try:
                         db = get_vector_db(persist_dir=str(db_path))
                         res = db.query(query_embeddings=[query_embedding], n_results=rerank_k)
                         
-                        print(f"--- DEBUG SUCHE ---")
-                        print(f"DB: {source_db} | Einträge in DB: {db.count()}")
                         found_count = len(res['documents'][0]) if res['documents'] else 0
-                        print(f"Ergebnisse für '{query}': {found_count}")
+                        logging.debug(f"Retrieval - DB: {source_db} | Resultate für Query '{query}': {found_count} von {db.count()}")
                         
                         all_results.append((res, source_db))
                     except Exception as e:
-                        print(f"Überspringe Db {source_db}: {e}")
+                        logging.warning(f"Zugriff auf Index {source_db} übersprungen: {e}")
             
             
-            # Phase 2: Sammeln & Deduplizieren
+            # Phase 2: Ergebnisse aggregieren und Duplikate via Inhalts-Hash filtern
             seen = set()
             candidates = []
             for res, source_db in all_results:
@@ -62,11 +61,11 @@ class RAGService:
             if not candidates:
                 return []
 
-            # Phase 3: Reranking mit Cross-Encoder
+            # Phase 3: Kandidaten mit Cross-Encoder bewerten und sortieren (Reranking)
             scores = reranker.predict([[query, c[0]] for c in candidates])
             scored = sorted(zip(scores, candidates), key=lambda x: x[0], reverse=True)
             
-            # Phase 4: Formatierung für API
+            # Phase 4: Ergebnisse für die API formatieren
             results = []
             for score, (doc, meta) in scored[:k]:
                 results.append({
@@ -109,41 +108,41 @@ class RAGService:
     def delete_document(cls, filename: str):
         """Löscht ein Dokument und erzwingt die Bereinigung der Datenbank."""
         
-        # 1. Datenbank-Bereinigung
+        # 1. Zugehörige Embeddings aus der Vektordatenbank entfernen
         for db_path in [VECTOR_DB_DIR, VECTOR_DB_DOCLING_DIR]:
             if db_path.exists() and any(db_path.iterdir()):
                 try:
                     db = get_vector_db(persist_dir=str(db_path))
                     
-                    #1. SChritt: Alle IDs finden, die zum Namen passen
+                    # Suche nach allen Chunk-IDs, die zum Dateinamen gehören
                     all_data = db.get() 
                     ids_to_delete = []
                     if all_data and "ids" in all_data:
                         for i in range(len(all_data["ids"])):
                             meta = all_data["metadatas"][i] if all_data["metadatas"] else {}
                             source = meta.get("source", "")
-                            # Wenn der Dateiname im Quellpfad vorkommt -> Weg damit!
+                            # Identifier speichern, falls der Dateiname mit der Quelle übereinstimmt
                             if filename in source or filename.replace(".pdf", "") in source:
                                 ids_to_delete.append(all_data["ids"][i])
                     
                     if ids_to_delete:
                         db.delete(ids=ids_to_delete)
                         db = get_vector_db(persist_dir=str(db_path))
-                        print(f"DEBUG: {len(ids_to_delete)}IDs aus {db_path.name} gelöscht")
+                        print(f"[{db_path.name}] {len(ids_to_delete)} Vektoren erfolgreich gelöscht")
 
                         _=db.count()
                         
                 except Exception as e:
                     print(f"DB Error in {db_path.name}: {e}")
 
-        # 2. PDF-Datei löschen
+        # 2. Ursprüngliche PDF-Datei aus dem Dokumenten-Ordner löschen
         clean_name = filename.replace(".pdf", "")
         DOCUMENTS_PATH = DATA_DIR / "documents"
         pdf_file = DOCUMENTS_PATH / f"{clean_name}.pdf"
         if pdf_file.exists():
             pdf_file.unlink()
 
-        # 3. Processed-Ordner bereinigen
+        # 3. Temporäre Verarbeitungs-Dateien (z.B. JSONL) bereinigen
         PROCESSED_PATH = DATA_DIR/ "processed"
         if PROCESSED_PATH.exists():
             for p_file in PROCESSED_PATH.glob(f"*{clean_name}*"):

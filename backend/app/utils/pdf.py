@@ -16,7 +16,7 @@ def extract_pdf_pages(pdf_path: str) -> List[PageText]:
     for i in range(len(doc)):
         page = doc.load_page(i)
         text = page.get_text("text") or ""
-        # normalize whitespace a bit
+        # Leerzeichen und Zeilenumbrüche für sauberen Textfluss normalisieren
         text = "\n".join(line.rstrip() for line in text.splitlines()).strip()
         pages.append(PageText(page=i + 1, text=text))
     doc.close()

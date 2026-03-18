@@ -11,7 +11,7 @@ from app.utils.text import chunk_text
 
 
 def stable_doc_id(file_path: Path) -> str:
-    # stable id based on filename + file size (simple and good enough for now)
+    # Generiert eine stabile, eindeutige ID basierend auf Dateiname und Dateigröße
     st = file_path.stat()
     raw = f"{file_path.name}:{st.st_size}".encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:16]
@@ -52,8 +52,7 @@ def ingest_pdf(pdf_path: Path, out_dir: Path, chunk_size: int, overlap: int) -> 
 
 
 def main() -> None:
-    # Definiere Standard-Ausgabeverzeichnis relativ zu diesem Skript
-    # ingest.py liegt in backend/app/rag/, also ist ../../../data/processed = localdoc-ai/data/processed
+    # Ausgabeverzeichnis für verarbeitete Dokumente festlegen
     DEFAULT_OUT_DIR = Path(__file__).parent.parent.parent / "data" / "processed"
     
     parser = argparse.ArgumentParser(description="Ingest PDFs into chunked JSONL.")

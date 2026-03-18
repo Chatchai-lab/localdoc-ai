@@ -7,8 +7,7 @@ OLLAMA_URL = "http://localhost:11434"
 MODEL = "llama3.1"
 
 def build_prompt(question: str, contexts: List[Dict[str, Any]]) -> str:
-    # Wir bringen die Struktur mit "Quelle [i]" zurück, lassen aber die 
-    # echten Dateinamen weg, damit die KI sie nicht in den Text schreibt.
+    # System-Prompt aufbauen und Kontexttexte ohne Offenlegung der Quelldateien aggregieren
     ctx_blocks = [f"[Quelle {i+1}]:\n{c['text']}" for i, c in enumerate(contexts)]
     ctx_text = "\n\n".join(ctx_blocks)
     
@@ -38,14 +37,14 @@ async def ollama_generate_stream(prompt: str) -> AsyncGenerator[str, None]:
     }
     
     try:
-        # Wir nutzen den AsyncClient für FastAPI
+        # AsyncClient für performantes Streaming unter FastAPI verwenden
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream("POST", f"{OLLAMA_URL}/api/generate", json=payload) as r:
                 if r.status_code != 200:
                     yield f"Fehler: Ollama liefert Status {r.status_code}."
                     return
 
-                async for line in r.aiter_lines(): # aiter_lines statt iter_lines
+                async for line in r.aiter_lines(): 
                     if line:
                         chunk = json.loads(line)
                         if "response" in chunk:

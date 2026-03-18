@@ -3,41 +3,38 @@ from pathlib import Path
 from docling.document_converter import DocumentConverter
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# Nutzt deine vorhandenen Module
+# Abhängigkeiten für Vektordatenbank und Embedding-Modelle
 from app.rag.vector_store import get_vector_db
 from app.services.models import get_bi_encoder
 
-# Definiere Datenverzeichnisse relativ zu diesem Skript
-# Docker: /app
-# Local: localdoc-ai/
+# Basis-Verzeichnis dynamisch ermitteln (Docker vs. Lokal)
 BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 VECTOR_DB_DOCLING_DIR = DATA_DIR / "vector_db_docling"
 
 def run_docling_ingest(pdf_path: Path):
-    print(f" Docling-Spezial-Ingest für: {pdf_path.name}")
+    print(f"Starte Docling-Verarbeitung für: {pdf_path.name}")
 
-    # 1. Konvertierung in Markdown (erhält Tabellenstruktur)
+    # 1. Dokument mit Layout-Erhaltung in strukturiertes Markdown konvertieren
     converter = DocumentConverter()
     result = converter.convert(str(pdf_path))
     markdown_content = result.document.export_to_markdown()
 
-    # 2. Splitting (optimiert für Markdown/Tabellen)
+    # 2. Textsegmentierung basierend auf Textlänge und Markdown-Formatierung (z.B. Tabellen)
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
-        separators=["\n\n", "\n", "|", " ", ""] # '|' hilft Tabellenzeilen zu erkennene
+        separators=["\n\n", "\n", "|", " ", ""]
     )
     chunks = text_splitter.split_text(markdown_content)
     
-    # 3. Verbindung zur neuen, zweiten Datenbank
-    # Wir übergeben den neuen Pfad an vector_store.py
+    # 3. Vektordatenbank und Embedding-Modell für Docling-Inhalte initialisieren
     collection = get_vector_db(persist_dir=str(VECTOR_DB_DOCLING_DIR))
     bi_encoder = get_bi_encoder()
 
-    print(f" Erzeuge Embeddings für {len(chunks)} Docling-Abschnitte...")
+    print(f"Erstelle Vektoren für {len(chunks)} Text-Abschnitte...")
 
-    # 4. Direktes Embedding & Speichern in Chroma
+    # 4. Text-Chunks in Vektor-Embeddings umwandeln und in die Datenbank schreiben
     for i, chunk_text in enumerate(chunks):
         embedding = bi_encoder.encode(chunk_text).tolist()
         

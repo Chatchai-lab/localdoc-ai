@@ -1,19 +1,19 @@
 const API_BASE_URL = "http://localhost:8000";
 
 export const api = {
-    // Holt die Statistiken (standard/docling counts)
+    // Ruft persistierte Dokumentenstatistiken aus dem Backend ab
     getStats: async () => {
         const response = await fetch(`${API_BASE_URL}/stats`);
         return await response.json();
     },
 
-    // Holt die Liste der PDF-Dateien
+    // Ruft die Liste prozessierter PDF-Dokumente ab
     getDocuments: async () => {
         const response = await fetch(`${API_BASE_URL}/documents`);
         return await response.json();
     },
 
-    // Lädt eine neue Datei hoch
+    // Überträgt ein neues Dokument zwecks Vektorisierung
     uploadDocument: async (file) => {
         const formData = new FormData();
         formData.append("file", file);
@@ -24,7 +24,7 @@ export const api = {
         return await response.json();
     },
 
-    // Löscht eine Datei
+    // Entfernt ein Dokument und dessen zugehörige Vektoren
     deleteDocument: async (filename) => {
         const response = await fetch(`${API_BASE_URL}/documents/${filename}`, {
             method: "DELETE",
