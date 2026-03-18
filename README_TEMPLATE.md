@@ -1,15 +1,15 @@
-# 🚀 LocalDoc AI – Setup-Anleitung
+# LocalDoc AI – Setup-Anleitung
 
 Willkommen bei LocalDoc AI! Diese App ermöglicht es dir, PDFs lokal hochzuladen, zu verarbeiten und einer KI (über Ollama) Fragen zu diesen Dokumenten zu stellen. Alles läuft zu 100 % lokal und privat auf deinem PC.
 
-## 📋 Voraussetzungen
+## Voraussetzungen
 
 Bevor du beginnst, stelle sicher, dass folgende Programme auf deinem System installiert sind:
 * **Git** (um das Projekt herunterzuladen)
 * **Docker** und **Docker Compose**
 * **Ollama** (für das lokale KI-Sprachmodell)
 
-## 🛠️ Installation & Start
+## Installation & Start
 
 ### 1. Repository klonen
 Lade dir den Code aus dem GitHub-Repository herunter und wechsle in den Projektordner:
@@ -40,14 +40,14 @@ Fertig! Öffne nun deinen Browser und besuche: **http://localhost:5173**
 
 ---
 
-## 📄 Hinweis zu "Docling" (Erweiterte PDF-Verarbeitung)
+## Hinweis zu "Docling" (Erweiterte PDF-Verarbeitung)
 
 Dieses Projekt nutzt einen intelligenten Fallback-Mechanismus für die Textverarbeitung. Es unterstützt **Docling**, ein leistungsstarkes Tool von IBM, das PDFs inklusive komplexer Tabellen in sauberes Markdown umwandeln kann.
 
 Da Docling relativ groß ist und Grafikschnittstellen benötigt, wurde es im System als **optional** konzipiert:
 
 * **In Docker (Standard aktiviert):** Im aktuellen Docker-Setup (`Dockerfile`) wird Docling mitsamt seiner Abhängigkeiten standardmäßig mit installiert. Löst automatisch aus, sobald Tabellen gefunden werden.  
-  *👉 Möchtest du ein leichtgewichtigeres Docker-Image bauen?* Öffne einfach die Datei `backend/Dockerfile` und kommentiere die Installation der `requirements-pdf.txt` aus. Das System fällt dann automatisch auf eine effiziente Standard-Textextraktion zurück.
+  *Möchtest du ein leichtgewichtigeres Docker-Image bauen?* Öffne einfach die Datei `backend/Dockerfile` und kommentiere die Installation der `requirements-pdf.txt` aus. Das System fällt dann automatisch auf eine effiziente Standard-Textextraktion zurück.
 
 * **Bei lokaler Installation (ohne Docker):**
   Wenn du das Python-Backend ohne Docker (z.B. in einer `venv`) entwickeln willst, kannst du selbst entscheiden, ob du Docling nutzt:
@@ -60,7 +60,7 @@ Da Docling relativ groß ist und Grafikschnittstellen benötigt, wurde es im Sys
   ```
   Das Backend im Ordner `app/rag/decide_and_process.py` erkennt automatisch, ob du Docling installiert hast und passt die Verarbeitung entsprechend an!
 
-## 🛑 Server stoppen
+## Server stoppen
 Um die App und die Docker-Container wieder zu beenden, wechsle im Terminal in deinen Projektordner und führe aus:
 ```bash
 docker-compose down
