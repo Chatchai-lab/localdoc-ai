@@ -11,9 +11,9 @@ from app.rag.generate import build_prompt, ollama_generate_stream
 from fastapi.middleware.cors import CORSMiddleware
 import json
 
-# Definiere Datenverzeichnisse relativ zu diesem Skript
-# main.py liegt in backend/app/, also ist ../data/ = localdoc-ai/data/
-BASE_DIR = Path(__file__).parent.parent.parent  # localdoc-ai/
+# Definiere Datenverzeichnisse
+# Im Docker läuft die App unter /app, lokal unter dem Projekt-Root
+BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 DOCUMENTS_DIR = DATA_DIR / "documents"
 

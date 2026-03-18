@@ -8,8 +8,9 @@ from app.rag.vector_store import get_vector_db
 from app.services.models import get_bi_encoder
 
 # Definiere Datenverzeichnisse relativ zu diesem Skript
-# ingest_docling.py liegt in backend/app/rag/, also ist ../../../data/ = localdoc-ai/data/
-BASE_DIR = Path(__file__).parent.parent.parent.parent  # localdoc-ai/
+# Docker: /app
+# Local: localdoc-ai/
+BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 VECTOR_DB_DOCLING_DIR = DATA_DIR / "vector_db_docling"
 

@@ -1,0 +1,11 @@
+# Optionale Docling-Unterstützung für erweiterte PDF-Verarbeitung
+# Installieren mit: pip install -r requirements-pdf.txt
+# Diese Pakete sind OPTIONAL - das Programm funktioniert auch ohne sie
+
+docling==2.76.0
+docling-core==2.67.1
+docling-ibm-models==3.11.0
+docling-parse==5.5.0
+langchain==1.2.10
+langchain-core==1.2.17
+langchain-text-splitters==1.1.1

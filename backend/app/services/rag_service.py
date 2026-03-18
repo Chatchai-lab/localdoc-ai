@@ -8,7 +8,9 @@ from app.rag.vector_store import get_vector_db
 import time
 
 CURRENT_FILE = Path(__file__).resolve()
-BASE_DIR = CURRENT_FILE.parent.parent.parent.parent
+# Docker: /app
+# Local: localdoc-ai/
+BASE_DIR = Path("/app") if Path("/app").exists() else CURRENT_FILE.parent.parent.parent.parent
 
 DATA_DIR = BASE_DIR / "data"
 VECTOR_DB_DIR = DATA_DIR / "vector_db"

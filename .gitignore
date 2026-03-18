@@ -53,3 +53,4 @@ data/vector_db_docling/*
 
 # Archive
 archive/
+docker_build.log

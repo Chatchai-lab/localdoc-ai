@@ -3,18 +3,22 @@ import subprocess
 import sys
 import logging
 from pathlib import Path
-from docling.document_converter import DocumentConverter
-from docling.datamodel.pipeline_options import PdfPipelineOptions
-from docling.datamodel.base_models import InputFormat
-from docling.document_converter import PdfFormatOption
 
+# Optional: Docling imports (nur wenn installiert)
+try:
+    from docling.document_converter import DocumentConverter
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.datamodel.base_models import InputFormat
+    from docling.document_converter import PdfFormatOption
+    from app.rag.ingest_docling import run_docling_ingest
+    DOCLING_AVAILABLE = True
+except ImportError:
+    DOCLING_AVAILABLE = False
+    logging.warning("Docling nicht installiert - verwende Standard-Pipeline")
 
-# Wir importieren den neuen Spezial-Weg
-from app.rag.ingest_docling import run_docling_ingest
-
-# Definiere Datenverzeichnisse relativ zu diesem Skript
-# decide_and_process.py liegt in backend/app/rag/, also ist ../../../data/ = localdoc-ai/data/
-BASE_DIR = Path(__file__).parent.parent.parent.parent  # localdoc-ai/
+# Definiere Datenverzeichnisse
+# Im Docker läuft die App unter /app, lokal unter dem Projekt-Root
+BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 PROCESSED_DIR = DATA_DIR / "processed"
 
@@ -30,6 +34,9 @@ class IngestFactory:
         """Lädt den Konverter nur einmalig in den RAM (Singleton Pattern)
         OCR ist deaktiviert für digitale PDFs (massive Speedup!)
         """
+        if not DOCLING_AVAILABLE:
+            return None
+            
         if cls._converter_cache is None:
             print(" Initialisiere Docling DocumentConverter (OCR deaktiviert)...")
             # Unterdrücke RapidOCR Warnungen
@@ -59,7 +66,13 @@ class IngestFactory:
             print(f" Datei nicht gefunden: {pdf_path_str}")
             return
 
-        print(f" Analyse des Layouts von '{pdf_path.name}'...")
+        print(f" Verarbeite '{pdf_path.name}'...")
+        
+        # Falls Docling nicht verfügbar → direkt Standard-Pipeline nutzen
+        if not DOCLING_AVAILABLE:
+            print(" docling nicht verfügbar - nutze Standard-Pipeline...")
+            cls._run_standard_pipeline(pdf_path)
+            return
         
         # 1. Schneller Check mit Docling auf Tabellen (verwendet gecachten Konverter)
         converter = cls.get_converter()
@@ -74,29 +87,38 @@ class IngestFactory:
                 # Pfad B: Direktes Ingest + Embedding in vector_db_docling
                 run_docling_ingest(pdf_path)
             else:
-                print(" Reiner Text erkannt. Triggere deine Standard-Kette...")
-                
-                # --- SCHRITT 1: DEIN INGEST.PY ---
-                # Wir rufen dein Skript exakt so auf, wie du es manuell tun würdest
-                print(" Schritt 1/2: Erzeuge JSONL (ingest.py)...")
-                subprocess.run([
-                    sys.executable, "-m", "app.rag.ingest", 
-                    "--in", str(pdf_path.parent), 
-                    "--out", str(PROCESSED_DIR)
-                ], check=True, cwd=str(BASE_DIR/"backend")) 
-
-                # --- SCHRITT 2: DEIN EMBED.PY ---
-                # Sobald die JSONL da ist, triggern wir das Embedding
-                print(" Schritt 2/2: Erzeuge Vektoren (embed.py)...")
-                subprocess.run([
-                    sys.executable, "-m", "app.rag.embed"
-                ], check=True, cwd=str(BASE_DIR/ "backend"))
-                
-                print(f" Standard-Kette für '{pdf_path.name}' erfolgreich abgeschlossen.")
+                print(" Reiner Text erkannt. Fallback zur Standard-Pipeline...")
+                cls._run_standard_pipeline(pdf_path)
 
         except Exception as e:
-            print(f" Fehler bei der Analyse: {e}. Nutze Sicherheits-Pfad (Docling).")
-            run_docling_ingest(pdf_path)
+            print(f" Fehler bei der Analyse: {e}. Fallback zur Standard-Pipeline...")
+            cls._run_standard_pipeline(pdf_path)
+
+    @classmethod
+    def _run_standard_pipeline(cls, pdf_path: Path):
+        """Standard-Verarbeitungspipeline OHNE Docling
+        Nutzt die normalen ingest.py und embed.py Skripte.
+        """
+        # Determine correct working directory
+        # Docker: /app (BASE_DIR)
+        # Local: ./backend (BASE_DIR / "backend")
+        cwd_path = BASE_DIR / "backend"
+        if not cwd_path.exists():
+            cwd_path = BASE_DIR
+
+        print(f" Schritt 1/2: Erzeuge JSONL mit ingest.py...")
+        subprocess.run([
+            sys.executable, "-m", "app.rag.ingest", 
+            "--in", str(pdf_path.parent), 
+            "--out", str(PROCESSED_DIR)
+        ], check=True, cwd=str(cwd_path))
+
+        print(f" Schritt 2/2: Erzeuge Vektoren mit embed.py...")
+        subprocess.run([
+            sys.executable, "-m", "app.rag.embed"
+        ], check=True, cwd=str(cwd_path))
+        
+        print(f" ✓ Standard-Pipeline für '{pdf_path.name}' erfolgreich abgeschlossen.")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

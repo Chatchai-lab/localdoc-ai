@@ -5,8 +5,9 @@ from sentence_transformers import SentenceTransformer
 from app.rag.vector_store import get_vector_db
 
 # Definiere Datenverzeichnisse relativ zu diesem Skript
-# embed.py liegt in backend/app/rag/, also ist ../../../data/ = localdoc-ai/data/
-BASE_DIR = Path(__file__).parent.parent.parent.parent  # localdoc-ai/
+# Docker: /app (BASE_DIR)
+# Local: localdoc-ai/ (BASE_DIR)
+BASE_DIR = Path("/app") if Path("/app").exists() else Path(__file__).parent.parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 VECTOR_DB_DIR = DATA_DIR / "vector_db"
 PROCESSED_DIR = DATA_DIR / "processed"
