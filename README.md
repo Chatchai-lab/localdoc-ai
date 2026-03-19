@@ -1,139 +1,116 @@
-# LocalDoc AI – Setup-Anleitung
+# 🚀 LocalDoc AI
 
-Willkommen bei LocalDoc AI! Diese App ermöglicht es dir, PDFs lokal hochzuladen, zu verarbeiten und einer KI (über Ollama) Fragen zu diesen Dokumenten zu stellen. Alles läuft zu 100 % lokal und privat auf deinem PC.
-
-## Voraussetzungen
-
-Bevor du beginnst, stelle sicher, dass folgende Programme auf deinem System installiert sind:
-* **Git** (um das Projekt herunterzuladen)
-* **Docker** und **Docker Compose**
-* **Ollama** (für das lokale KI-Sprachmodell)
-
-## Installation & Start
-
-### 1. Repository klonen
-Lade dir den Code aus dem GitHub-Repository herunter und wechsle in den Projektordner:
-```bash
-git clone https://github.com/Chatchai-lab/localdoc-ai.git
-cd localdoc-ai
-```
-
-### 2. Ollama & KI-Modell starten
-Das Backend benötigt Ollama, um Antworten zu generieren. Starte Ollama und lade das Standard-Sprachmodell (`llama3.1`), welches in der App verwendet wird:
-```bash
-# Lade das KI-Modell herunter
-ollama pull llama3.1
-
-# Stelle sicher, dass Ollama im Hintergrund läuft
-ollama serve
-```
-
-### 3. Mit Docker starten (Schnell & Einfach)
-Du kannst das komplette System (Frontend, Backend, Datenbanken) mit nur einem Befehl über Docker starten. 
-
-```bash
-docker-compose up -d --build
-```
-*(Der Zusatz `-d` startet die Container im Hintergrund. Der erste Start kann einige Minuten dauern, da das Docker-Image gebaut und Abhängigkeiten heruntergeladen werden).*
-
-Fertig! Öffne nun deinen Browser und besuche: **http://localhost:5173**
+Willkommen bei **LocalDoc AI**! Eine hochmoderne, komplett lokal laufende RAG-Lösung (Retrieval-Augmented Generation), mit der du PDF-Dokumente hochladen, analysieren und intelligent über eine Chat-Schnittstelle befragen kannst. Keine Cloud, keine externen APIs – deine Daten bleiben zu 100% bei dir.
 
 ---
 
-## Hinweis zu "Docling" (Erweiterte PDF-Verarbeitung)
+## 🎯 Projektziel
 
-Dieses Projekt nutzt einen intelligenten Fallback-Mechanismus für die Textverarbeitung. Es unterstützt **Docling**, ein leistungsstarkes Tool von IBM, das PDFs inklusive komplexer Tabellen in sauberes Markdown umwandeln kann.
-
-Da Docling relativ groß ist und Grafikschnittstellen benötigt, wurde es im System als **optional** konzipiert:
-
-* **In Docker (Standard aktiviert):** Im aktuellen Docker-Setup (`Dockerfile`) wird Docling mitsamt seiner Abhängigkeiten standardmäßig mit installiert. Löst automatisch aus, sobald Tabellen gefunden werden.  
-  *Möchtest du ein leichtgewichtigeres Docker-Image bauen?* Öffne einfach die Datei `backend/Dockerfile` und kommentiere die Installation der `requirements-pdf.txt` aus. Das System fällt dann automatisch auf eine effiziente Standard-Textextraktion zurück.
-
-* **Bei lokaler Installation (ohne Docker):**
-  Wenn du das Python-Backend ohne Docker (z.B. in einer `venv`) entwickeln willst, kannst du selbst entscheiden, ob du Docling nutzt:
-  ```bash
-  # 1. Basis-Installation (Leichtgewichtig, Standard-PDF)
-  pip install -r requirements.txt
-  
-  # 2. OPTIONAL: Installiere Docling für Tabellen-Support
-  pip install -r requirements-pdf.txt
-  ```
-  Das Backend im Ordner `app/rag/decide_and_process.py` erkennt automatisch, ob du Docling installiert hast und passt die Verarbeitung entsprechend an!
-
-## Server stoppen
-Um die App und die Docker-Container wieder zu beenden, wechsle im Terminal in deinen Projektordner und führe aus:
-```bash
-docker-compose down
-```
-*(Deine hochgeladenen Dokumente und Vektor-Datenbanken im Ordner `/data` bleiben dabei sicher auf deiner Festplatte erhalten!)*
+Der Hauptzweck von LocalDoc AI ist es, eine sichere, effiziente und performante Arbeitsumgebung für die Verarbeitung von vertraulichen Dokumenten zu schaffen. 
+* **100% Datenschutz:** Die KI läuft lokal via Ollama, Dokumente werden lokal auf deiner Maschine verarbeitet und indexiert.
+* **Intelligente Fallbacks:** Ein dynamisches Ingest-System entscheidet automatisch, ob eine einfache Textextraktion (via PyMuPDF) reicht oder ob das mächtige **Docling**-Modul für die Verarbeitung komplexer Tabellen in strukturiertes Markdown benötigt wird.
+* **Open Source & Erweiterbar:** Eine saubere, modulare Architektur, die sich leicht an eigene Bedürfnisse anpassen lässt.
 
 ---
 
-## 🚀 LocalDoc AI – Setup-Anleitung
+## 📸 Screenshots
 
-Willkommen bei LocalDoc AI! Diese App ermöglicht es dir, PDFs lokal hochzuladen, zu verarbeiten und einer KI (über Ollama) Fragen zu diesen Dokumenten zu stellen. Alles läuft zu 100 % lokal und privat auf deinem PC.
+*(Hier kannst du später Screenshots deiner Anwendung einfügen)*
 
-## 📋 Voraussetzungen
+| Dokumenten-Upload & Übersicht | Chat-Interface & KI-Antwort |
+|:---:|:---:|
+| `<img src="docs/upload_screenshot.png" width="400"/>` | `<img src="docs/chat_screenshot.png" width="400"/>` |
+| *Intuitive UI für das Management deiner PDFs* | *Die KI zitiert exakt aus deinen Dokumenten* |
 
-Bevor du beginnst, stelle sicher, dass folgende Programme auf deinem System installiert sind:
-* **[Git](https://git-scm.com/)** (um das Projekt herunterzuladen)
+---
+
+## 🏗️ Architektur
+
+Der Datenfluss im System sieht grob folgendermaßen aus:
+
+1. **Upload:** Der Nutzer lädt über das React-Frontend ein PDF hoch.
+2. **Entscheidung & Verarbeitung:** Das FastAPI-Backend analysiert das Dokument. Besteht es aus komplexen Tabellenstrukturen, übernimmt `Docling` das Parsing (Formatierung als Markdown). Andernfalls läuft eine leichtgewichtige Standard-Verarbeitung (`PyMuPDF`).
+3. **Embedding:** Die extrahierten Textblöcke werden über lokale HuggingFace Sentence-Transformers (z.B. `multilingual-e5-small`) in Vektoren umgewandelt.
+4. **Speicherung:** Diese Vektoren werden in persistente SQLite-Tensordatenbanken via `ChromaDB` abgelegt.
+5. **Retrieval & Generation (RAG):** Stellt der Nutzer eine Frage, sucht der RAG-Service nach den relevantesten Textstücken (mit Cross-Encoder Reranking), fügt sie als Kontext in einen Prompt ein und streamt die Antwort über `Ollama` an das Frontend zurück.
+
+---
+
+## 💻 Tech Stack
+
+**Frontend:**
+* [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+* [Tailwind CSS](https://tailwindcss.com/) (für rasantes, responsives Styling)
+* `react-markdown` für saubere KI-Ausgaben
+
+**Backend:**
+* [Python 3.10](https://www.python.org/) + [FastAPI](https://fastapi.tiangolo.com/) (performante asynchrone API)
+* [ChromaDB](https://www.trychroma.com/) (Vektordatenbank)
+* [Docling](https://github.com/DS4SD/docling) (fortschrittliche Dokumentenstrukturanalyse)
+* [Sentence-Transformers](https://sbert.net/) (Bi-Encoder und Cross-Encoder für Embeddings/Reranking)
+
+**LLM & DevOps:**
+* [Ollama](https://ollama.com/) (Inferenz-Engine für lokale Modelle, standardmäßig `llama3.1`)
+* **Docker & Docker Compose** (Containerisierung, isolierte Netzwerke, Host-Routing)
+
+---
+
+## 🛠️ Setup Anleitung
+
+### 1. Voraussetzungen
+* **[Git](https://git-scm.com/)**
 * **[Docker](https://www.docker.com/)** und **Docker Compose**
-* **[Ollama](https://ollama.com/)** (für das lokale KI-Sprachmodell)
+* **[Ollama](https://ollama.com/)** (auf deinem Host-Rechner installiert)
 
-## 🛠️ Installation & Start
-
-### 1. Repository klonen
-Lade dir den Code aus dem GitHub-Repository herunter und wechsle in den Projektordner:
+### 2. Repository klonen
 ```bash
 git clone https://github.com/Chatchai-lab/localdoc-ai.git
 cd localdoc-ai
 ```
 
-### 2. Ollama & KI-Modell starten
-Das Backend benötigt Ollama, um Antworten zu generieren. Starte Ollama und lade das Standard-Sprachmodell (`llama3.1`), welches in der App verwendet wird:
+### 3. Ollama & KI-Modell vorbereiten
+Das Backend sendet die Prompts an deine lokale Ollama-Instanz. Lade zunächst das Standardmodell herunter:
 ```bash
-# Lade das KI-Modell herunter
+# Lade das LLaMA 3.1 Modell
 ollama pull llama3.1
 
-# Stelle sicher, dass Ollama im Hintergrund läuft
+# Lasse Ollama im Hintergrund laufen (meist passiert dies automatisch nach der Installation)
 ollama serve
 ```
 
-### 3. Mit Docker starten (Schnell & Einfach)
-Du kannst das komplette System (Frontend, Backend, Datenbanken) mit nur einem Befehl über Docker starten. 
+### 4. Mit Docker starten
+Starte das gesamte System (Frontend, FastAPI-Backend, ChromaDB) bequem über Docker:
 
 ```bash
 docker-compose up -d --build
 ```
-*(Der Zusatz `-d` startet die Container im Hintergrund. Der erste Start kann einige Minuten dauern, da das Docker-Image gebaut und Abhängigkeiten heruntergeladen werden).*
+*(Der Zusatz `-d` startet die Container im Hintergrund. Der erste Start dauert etwas, da Vektor-Modelle geladen und grafische Systempakete für Docling installiert werden).*
 
-Fertig! Öffne nun deinen Browser und besuche: **[http://localhost:5173](http://localhost:5173)**
+🎉 **Fertig!** Öffne nun deinen Browser unter: **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
-## 📄 Hinweis zu "Docling" (Erweiterte PDF-Verarbeitung)
+## 📄 Hinweis zu "Docling" (Optionale Erweiterung)
 
-Dieses Projekt nutzt einen intelligenten Fallback-Mechanismus für die Textverarbeitung. Es unterstützt **[Docling](https://github.com/DS4SD/docling)**, ein leistungsstarkes Tool von IBM, das PDFs inklusive komplexer Tabellen in sauberes Markdown umwandeln kann.
+Das Projekt nutzt **Docling** von IBM für eine herausragende Textextraktion bei Layouts mit komplexen Tabellen. Da Docling bestimmte Systembibliotheken (wie `libgl1`) benötigt, ist Docker die bevorzugte Startmethode, da hier alles vorkonfiguriert ist.
 
-Da Docling relativ groß ist und Grafikschnittstellen benötigt, wurde es im System als **optional** konzipiert:
-
-* **In Docker (Standard aktiviert):** Im aktuellen Docker-Setup (`Dockerfile`) wird Docling mitsamt seiner Abhängigkeiten standardmäßig mit installiert. Löst automatisch aus, sobald Tabellen gefunden werden.  
-  *👉 Möchtest du ein leichtgewichtigeres Docker-Image bauen?* Öffne einfach die Datei `backend/Dockerfile` und kommentiere die Installation der `requirements-pdf.txt` aus. Das System fällt dann automatisch auf eine effiziente Standard-Textextraktion zurück.
-
-* **Bei lokaler Installation (ohne Docker):**
-  Wenn du das Python-Backend ohne Docker (z.B. in einer `venv`) entwickeln willst, kannst du selbst entscheiden, ob du Docling nutzt:
-  ```bash
-  # 1. Basis-Installation (Leichtgewichtig, Standard-PDF)
-  pip install -r requirements.txt
-  
-  # 2. OPTIONAL: Installiere Docling für Tabellen-Support
-  pip install -r requirements-pdf.txt
-  ```
-  Das Backend im Ordner `app/rag/decide_and_process.py` erkennt automatisch, ob du Docling installiert hast und passt die Verarbeitung entsprechend an!
+* **Leichtgewichtiger Build:** Falls du Tabellen-Parsing nicht benötigst und ein kleineres Image möchtest, öffne die `Dockerfile` im Ordner `/backend` und kommentiere die Installation der entsprechenden `requirements-pdf.txt` aus. Das System erkennt das Fehlen automatisch und verwendet die Standard-PyMuPDF-Pipeline!
 
 ## 🛑 Server stoppen
-Um die App und die Docker-Container wieder zu beenden, wechsle im Terminal in deinen Projektordner und führe aus:
+Um alle Dienste herunterzufahren, nutze:
 ```bash
 docker-compose down
 ```
-*(Deine hochgeladenen Dokumente und Vektor-Datenbanken im Ordner `/data` bleiben dabei sicher auf deiner Festplatte erhalten!)*
+Keine Sorge: Deine verarbeiteten Vektoren und heruntergeladenen Modelle im Ordner `/data` bleiben persistent!
+
+---
+
+## 🔮 Mögliche Verbesserungen
+
+Wenn du das Projekt weiterentwickeln möchtest, hier ein paar Ideen:
+
+* [ ] **Multimodalität:** Unterstützung für weitere Dateiformate wie `.docx`, `.xlsx`, oder `.csv`.
+* [ ] **Memory Management:** Einen echten "Conversation Buffer" einbauen, damit die KI sich an vorherige Fragen in einem Chat-Verlauf erinnert.
+* [ ] **Modell-Wechsler im Frontend:** Eine Dropdown-Auswahl in der UI, die es erlaubt, zwischen verschiedenen via Ollama verfügbaren Modellen (z.B. *mistral*, *phi3*) zu wechseln.
+* [ ] **Live-Quellen-Preview:** Beim Klick auf eine referenzierte Seite in der KI-Antwort öffnet sich parallel das PDF-Dokument an genau dieser Stelle.
+* [ ] **Cloud-Sync (Optional):** Optionales Backup der Vektordatenbank auf AWS/GCP, falls mehrere Rechner denselben Stand nutzen sollen.
