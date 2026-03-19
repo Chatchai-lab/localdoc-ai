@@ -13,14 +13,32 @@ Der Hauptzweck von LocalDoc AI ist es, eine sichere, effiziente und performante 
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots & Showcase
 
-*(Hier kannst du später Screenshots deiner Anwendung einfügen)*
+Um die Fähigkeiten von LocalDoc AI – insbesondere das Auslesen von Tabellen und das Verständnis technischer Kennzahlen – zu demonstrieren, wurde als Testdokument **das Technische Handbuch eines fiktiven 3D-Druckers (4 Seiten)** verwendet.
 
-| Dokumenten-Upload & Übersicht | Chat-Interface & KI-Antwort |
-|:---:|:---:|
-| `<img src="docs/upload_screenshot.png" width="400"/>` | `<img src="docs/chat_screenshot.png" width="400"/>` |
-| *Intuitive UI für das Management deiner PDFs* | *Die KI zitiert exakt aus deinen Dokumenten* |
+### 1. Dokumenten-Upload & Verarbeitung
+Beim Upload der PDF erkennt die intelligente Pipeline dank der enthaltenen Tabellen sofort, dass das Dokument komplex ist, und nutzt automatisch **Docling** für die detaillierte Struktur-Extraktion.
+
+<img src="docs/1_upload_verarbeitung.png" width="400" alt="Upload Übersicht"/>
+
+### 2. Fragestellung & Nachdenkzeit
+Eingabe der Fragestellung im Chat. Während die UI "KI analysiert Dokumente..." anzeigt, sucht das System im Hintergrund (via RAG-Retrieval & Reranking) rasend schnell nach den relevantesten Abschnitten in der Vektordatenbank.
+
+<img src="docs/2_nachdenkzeit.png" width="600" alt="Die KI denkt nach"/>
+
+### 3. Chat-Interface & Volle Anwendung
+Die KI beantwortet komplexe, technische Fragen (z.B. nach bestimmten Haftmitteln für TPU oder Wartungsintervallen) punktgenau basierend auf den verarbeiteten Tabellen. Unter jeder Antwort wird transparent die referenzierte Quelle angezeigt.
+
+<img src="docs/3_gesamter_chat.png" width="800" alt="Gesamtes Chat Interface"/>
+
+### 4. Auszüge aus dem Test-Dokument
+Hier sind Beispiele aus dem verwendeten 3D-Drucker Handbuch. Die komplexe Formatierung (Tabellen mit Prozessparametern und Wartungsplänen) wird von LocalDoc AI mühelos gelesen und verstanden.
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+  <img src="docs/4_pdf_auszug.png" width="400" alt="Auszug 1"/>
+  <img src="docs/5_pdf_auszug.png" width="400" alt="Auszug 2"/>
+</div>
 
 ---
 
