@@ -1,6 +1,7 @@
 """
 RAG Service - Enthält die Geschäftslogik für Dokumentensuche und Reranking.
 """
+import logging
 from typing import List, Dict, Any
 from pathlib import Path
 from app.services.models import get_bi_encoder, get_cross_encoder
@@ -19,8 +20,6 @@ VECTOR_DB_DOCLING_DIR = DATA_DIR / "vector_db_docling"
 class RAGService:
     """Service für semantische Dokumentensuche mit Reranking."""
     
-    import logging
-
     @staticmethod
     def search_and_rerank(query: str, k: int = 3, rerank_k: int = 10) -> List[Dict[str, Any]]:
     

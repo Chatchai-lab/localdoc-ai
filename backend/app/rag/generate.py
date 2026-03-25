@@ -1,9 +1,10 @@
 from __future__ import annotations
 import httpx
 import json
+import os
 from typing import List, Dict, Any, Generator, AsyncGenerator
 
-OLLAMA_URL = "http://localhost:11434"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://host.docker.internal:11434")
 MODEL = "llama3.1"
 
 def build_prompt(question: str, contexts: List[Dict[str, Any]]) -> str:
