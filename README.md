@@ -1,10 +1,10 @@
-# 🚀 LocalDoc AI
+#  LocalDoc AI
 
 Willkommen bei **LocalDoc AI**! Eine hochmoderne, komplett lokal laufende RAG-Lösung (Retrieval-Augmented Generation), mit der du PDF-Dokumente hochladen, analysieren und intelligent über eine Chat-Schnittstelle befragen kannst. Keine Cloud, keine externen APIs – deine Daten bleiben zu 100% bei dir.
 
 ---
 
-## 🎯 Projektziel
+##  Projektziel
 
 Der Hauptzweck von LocalDoc AI ist es, eine sichere, effiziente und performante Arbeitsumgebung für die Verarbeitung von vertraulichen Dokumenten zu schaffen. 
 * **100% Datenschutz:** Die KI läuft lokal via Ollama, Dokumente werden lokal auf deiner Maschine verarbeitet und indexiert.
@@ -13,7 +13,7 @@ Der Hauptzweck von LocalDoc AI ist es, eine sichere, effiziente und performante 
 
 ---
 
-## 📸 Screenshots & Showcase
+##  Screenshots & Showcase
 
 Um die Fähigkeiten von LocalDoc AI – insbesondere das Auslesen von Tabellen und das Verständnis technischer Kennzahlen – zu demonstrieren, wurde als Testdokument **das Technische Handbuch eines fiktiven 3D-Druckers (4 Seiten)** verwendet.
 
@@ -42,7 +42,7 @@ Hier sind Beispiele aus dem verwendeten 3D-Drucker Handbuch. Die komplexe Format
 
 ---
 
-## 🏗️ Architektur
+##  Architektur
 
 Der Datenfluss im System sieht grob folgendermaßen aus:
 
@@ -54,7 +54,7 @@ Der Datenfluss im System sieht grob folgendermaßen aus:
 
 ---
 
-## 💻 Tech Stack
+##  Tech Stack
 
 **Frontend:**
 * [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
@@ -73,7 +73,7 @@ Der Datenfluss im System sieht grob folgendermaßen aus:
 
 ---
 
-## 🛠️ Setup Anleitung
+##  Setup Anleitung
 
 ### 1. Voraussetzungen
 * **[Git](https://git-scm.com/)**
@@ -104,17 +104,17 @@ docker-compose up -d --build
 ```
 *(Der Zusatz `-d` startet die Container im Hintergrund. Der erste Start dauert etwas, da Vektor-Modelle geladen und grafische Systempakete für Docling installiert werden).*
 
-🎉 **Fertig!** Öffne nun deinen Browser unter: **[http://localhost:5173](http://localhost:5173)**
+ **Fertig!** Öffne nun deinen Browser unter: **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
-## 📄 Hinweis zu "Docling" (Optionale Erweiterung)
+##  Hinweis zu "Docling" (Optionale Erweiterung)
 
 Das Projekt nutzt **Docling** von IBM für eine herausragende Textextraktion bei Layouts mit komplexen Tabellen. Da Docling bestimmte Systembibliotheken (wie `libgl1`) benötigt, ist Docker die bevorzugte Startmethode, da hier alles vorkonfiguriert ist.
 
 * **Leichtgewichtiger Build:** Falls du Tabellen-Parsing nicht benötigst und ein kleineres Image möchtest, öffne die `Dockerfile` im Ordner `/backend` und kommentiere die Installation der entsprechenden `requirements-pdf.txt` aus. Das System erkennt das Fehlen automatisch und verwendet die Standard-PyMuPDF-Pipeline!
 
-## 🛑 Server stoppen
+##  Server stoppen
 Um alle Dienste herunterzufahren, nutze:
 ```bash
 docker-compose down
@@ -123,7 +123,7 @@ Keine Sorge: Deine verarbeiteten Vektoren und heruntergeladenen Modelle im Ordne
 
 ---
 
-## 🔮 Mögliche Verbesserungen
+##  Mögliche Verbesserungen
 
 Wenn du das Projekt weiterentwickeln möchtest, hier ein paar Ideen:
 
