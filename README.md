@@ -125,7 +125,6 @@ Keine Sorge: Deine verarbeiteten Vektoren und heruntergeladenen Modelle im Ordne
 
 ##  Mögliche Verbesserungen
 
-Wenn du das Projekt weiterentwickeln möchtest, hier ein paar Ideen:
 
 * [ ] **Multimodalität:** Unterstützung für weitere Dateiformate wie `.docx`, `.xlsx`, oder `.csv`.
 * [ ] **Memory Management:** Einen echten "Conversation Buffer" einbauen, damit die KI sich an vorherige Fragen in einem Chat-Verlauf erinnert.
