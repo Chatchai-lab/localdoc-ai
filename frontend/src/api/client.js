@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "http://backend:8000";
 
 export const api = {
     // Ruft persistierte Dokumentenstatistiken aus dem Backend ab
